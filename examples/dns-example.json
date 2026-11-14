@@ -1,0 +1,172 @@
+{
+  "example.com": {
+    "MX": [
+      [
+        10,
+        "mx1.example.com"
+      ],
+      [
+        20,
+        "mx2.example.com"
+      ]
+    ],
+    "TXT": [
+      "v=spf1 ip4:192.0.2.0/27 include:_spf.mailhost.example.net -all",
+      "google-site-verification=example-token"
+    ],
+    "A": [
+      "192.0.2.10"
+    ]
+  },
+  "mx1.example.com": {
+    "A": [
+      "192.0.2.25"
+    ]
+  },
+  "mx2.example.com": {
+    "A": [
+      "192.0.2.26"
+    ],
+    "AAAA": [
+      "2001:db8::26"
+    ]
+  },
+  "_spf.mailhost.example.net": {
+    "TXT": [
+      "v=spf1 ip4:198.51.100.0/24 ip6:2001:db8:100::/48 ~all"
+    ]
+  },
+  "selector1._domainkey.example.com": {
+    "TXT": [
+      [
+        "v=DKIM1; k=rsa; p=",
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwkdqg2UvgP5bRBHPn+6SgOc/pRih54wsESP9joa6Zc+q8KWIJ97pr95giq4HXd5zkDe1R4V5vI1dp3s59ijGooeQzUGA3N1VSV8kuQwOse+ACJP1Ge0umtNiCLzORqRWZEDQE3Gzc5zeum1TLvvIgi4+d4UwVRV9quGyDtqcRA7seszBUqns01UIpfjy77HaMAkWCTitSXh00H",
+        "auuwkc3ybRDyUYRWSEIHKFM9fLKypwo1+rFxfF0IUBJWW1sODYBlC0oyvqH8KNqr5tTSqfLCt6gID0UdU+wuVdKFGMtEf1kCz2SI4ZBbIM2OBl1uVLcZINXjVZzrhSjdL49gegsQIDAQAB"
+      ]
+    ]
+  },
+  "_dmarc.example.com": {
+    "TXT": [
+      "v=DMARC1; p=reject; rua=mailto:dmarc@example.com,mailto:reports@dmarc.example.org; adkim=r; aspf=r"
+    ]
+  },
+  "example.com._report._dmarc.dmarc.example.org": {
+    "TXT": [
+      "v=DMARC1"
+    ]
+  },
+  "_mta-sts.example.com": {
+    "TXT": [
+      "v=STSv1; id=20261101T000000"
+    ]
+  },
+  "_smtp._tls.example.com": {
+    "TXT": [
+      "v=TLSRPTv1; rua=mailto:tls-reports@example.com"
+    ]
+  },
+  "default._bimi.example.com": {
+    "TXT": [
+      "v=BIMI1; l=https://www.example.com/brand/logo.svg; a=https://www.example.com/brand/vmc.pem"
+    ]
+  },
+  "25.2.0.192.in-addr.arpa": {
+    "PTR": [
+      "mx1.example.com"
+    ]
+  },
+  "broken.example": {
+    "MX": [
+      [
+        10,
+        "192.0.2.99"
+      ],
+      [
+        20,
+        "mail.broken.example"
+      ]
+    ],
+    "TXT": [
+      "v=spf1 include:_spf1.broken.example include:_spf2.broken.example include:_spf3.broken.example a mx ptr +all",
+      "v=verification-token-123"
+    ]
+  },
+  "mail.broken.example": {
+    "CNAME": [
+      "host.broken.example"
+    ]
+  },
+  "host.broken.example": {
+    "A": [
+      "10.0.0.5"
+    ]
+  },
+  "k1._domainkey.broken.example": {
+    "TXT": [
+      [
+        "v=DKIM1; p=",
+        "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQD48FoeYt1UQGpwtfiv82jwj8UJKirq8F5csBfpqs03ac6Xt9zDlj1gwgodYu9AVW+WM3gGmU4+9LBKpDGibA4qVRoASOCOUbHoG20gVVluUa4NrUq2sCpY2aOuw8/regu9Wkf1bvgkrGUcJ2tXtzZ8BrzG/gxZe6CsDEa1QyOAFwIDAQAB"
+      ]
+    ]
+  },
+  "_dmarc.broken.example": {
+    "TXT": [
+      "v=DMARC1; p=none; pct=50; rua=mailto:reports@thirdparty.example.net"
+    ]
+  },
+  "_http": {
+    "https://mta-sts.example.com/.well-known/mta-sts.txt": {
+      "status": 200,
+      "content_type": "text/plain",
+      "body": "version: STSv1\r\nmode: enforce\r\nmx: mx1.example.com\r\nmx: *.example.com\r\nmax_age: 1209600\r\n"
+    },
+    "https://www.example.com/brand/logo.svg": {
+      "status": 200,
+      "content_type": "image/svg+xml",
+      "body": "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny-ps\" viewBox=\"0 0 100 100\"><title>Example</title><rect width=\"100\" height=\"100\" fill=\"#0b5\"/></svg>"
+    }
+  },
+  "_spf1.broken.example": {
+    "TXT": [
+      "v=spf1 include:_s1a.broken.example include:_s1b.broken.example a:out1.broken.example ~all"
+    ]
+  },
+  "_s1a.broken.example": {
+    "TXT": [
+      "v=spf1 ip4:203.0.113.0/24 ~all"
+    ]
+  },
+  "_s1b.broken.example": {
+    "TXT": [
+      "v=spf1 mx:relay.broken.example ~all"
+    ]
+  },
+  "_spf2.broken.example": {
+    "TXT": [
+      "v=spf1 exists:%{i}.allow.broken.example a:gone.broken.example ~all"
+    ]
+  },
+  "_spf3.broken.example": {
+    "TXT": [
+      "v=spf1 include:_s3a.broken.example ip4:0.0.0.0/1 ~all"
+    ]
+  },
+  "_s3a.broken.example": {
+    "TXT": [
+      "v=spf1 a:also-gone.broken.example mx:none.broken.example ~all"
+    ]
+  },
+  "out1.broken.example": {
+    "A": [
+      "203.0.113.9"
+    ]
+  },
+  "relay.broken.example": {
+    "MX": [
+      [
+        10,
+        "host.broken.example"
+      ]
+    ]
+  }
+}

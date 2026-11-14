@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Test
+        run: pytest
+      - name: CLI smoke test (offline DNS data)
+        run: |
+          mail-auth-check --version
+          mail-auth-check example.com --dns-data examples/dns-example.json
+          mail-auth-check example.com --dns-data examples/dns-example.json --format json --output smoke.json
+          python -c "import json; d = json.load(open('smoke.json')); assert d['domains'][0]['grade'] == 'A'"
+          mail-auth-check example.com --dns-data examples/dns-example.json --headers examples/message-headers.txt \
+            --ip 192.0.2.25 --format markdown
+          # A broken domain must fail the build (exit code 1).
+          set +e
+          mail-auth-check broken.example --dns-data examples/dns-example.json
+          code=$?
+          set -e
+          test "$code" -eq 1
+          python examples/library_usage.py
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mail-auth-check:ci .
+      - run: >
+          docker run --rm -v "$PWD/examples:/work:ro" mail-auth-check:ci
+          example.com --dns-data dns-example.json

@@ -1,0 +1,30 @@
+# Check the mail DNS of your domains every day and on every change to the DNS repository.
+# The job fails (exit code 1) when a check reports an error or a domain scores below 80.
+name: Mail authentication
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  push:
+    paths: ["dns/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "mail-auth-check @ git+https://github.com/saizul/mail-auth-check"
+      - name: Check
+        run: |
+          mail-auth-check example.com example.org \
+            --selector selector1 --selector google \
+            --format markdown --output report.md --fail-under 80 || code=$?
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+          exit "${code:-0}"

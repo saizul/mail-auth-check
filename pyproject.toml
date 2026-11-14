@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mail-auth-check"
+dynamic = ["version"]
+description = "Check SPF (with RFC 7208 lookup counting), DKIM, DMARC, BIMI, MTA-STS, TLS-RPT and MX for a domain, plus the Gmail and Yahoo sender requirements, with a score, fix hints and CI exit codes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Saizul Amin" }]
+keywords = ["email", "spf", "dkim", "dmarc", "bimi", "mta-sts", "tls-rpt", "deliverability", "dns"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Email",
+    "Topic :: Internet :: Name Service (DNS)",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+dependencies = ["dnspython>=2.4"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/saizul/mail-auth-check"
+Issues = "https://github.com/saizul/mail-auth-check/issues"
+Changelog = "https://github.com/saizul/mail-auth-check/blob/main/CHANGELOG.md"
+
+[project.scripts]
+mail-auth-check = "mail_auth_check.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "mail_auth_check._version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mail_auth_check = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM", "RUF"]
+ignore = ["SIM108", "RUF022"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]

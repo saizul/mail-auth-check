@@ -1,0 +1,17 @@
+Return-Path: <bounce-1234@mail.example.com>
+Authentication-Results: mx.receiver.example; dkim=pass header.i=@example.com header.s=selector1;
+ spf=pass smtp.mailfrom=mail.example.com; dmarc=pass (p=REJECT) header.from=example.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=example.com; s=selector1;
+ h=from:to:subject:date:message-id:list-unsubscribe:list-unsubscribe-post; bh=EXAMPLEBODYHASH=;
+ b=EXAMPLESIGNATURE=
+From: Example News <news@example.com>
+To: reader@example.org
+Subject: November newsletter
+Date: Fri, 13 Nov 2026 09:30:00 +0000
+Message-ID: <20261113093000.1234@mail.example.com>
+List-Unsubscribe: <https://www.example.com/unsubscribe/abc123>, <mailto:unsubscribe@example.com?subject=abc123>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+(body omitted)
