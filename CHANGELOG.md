@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `mail-auth-check flatten-spf <domain>`: builds an SPF record that replaces `include`, `a`, `mx` and `redirect`
+  terms with the `ip4:`/`ip6:` ranges they resolve to (merged and collapsed), to get a policy back under the
+  10-lookup limit. Long results are split into chained `include:_spfN.<domain>` records under `--max-length`
+  (default 450 characters). Macros, `exists`, `ptr`, non-pass terms and includes that end in `+all` are kept, and
+  `--keep` leaves chosen includes alone.
+- Every proposal is checked before it is printed: the new lookup count comes from the same analysis as the SPF check
+  with the new records laid over the real DNS answers, and `check_host()` runs for a sample of addresses (range edges,
+  the address after each range and `--ip`) against the old and the new policy. A different result is an error.
+- Text, JSON and zone-file (`--format zone`, `--ttl`) output; exit codes 0, 1 (still over the limit or a different
+  result), 2 (usage) and 3 (DNS failure).
+- Library API: `flatten_spf()`, `FlattenResult` and `OverlayResolver` (try new SPF records on top of any resolver).
+
 ## [0.1.0] - 2026-11-14
 
 ### Added
