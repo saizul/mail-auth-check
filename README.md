@@ -44,6 +44,7 @@ broken.example: score 41/100 (grade F), 7 error(s), 8 warning(s)
 - [Docker image](#docker-image)
 - [Usage](#usage)
 - [What is checked](#what-is-checked)
+- [Flattening an SPF record](#flattening-an-spf-record)
 - [Score and exit codes](#score-and-exit-codes)
 - [Configuration](#configuration)
 - [Offline mode and fake DNS data](#offline-mode-and-fake-dns-data)
@@ -61,6 +62,9 @@ broken.example: score 41/100 (grade F), 7 error(s), 8 warning(s)
   loops, includes without an SPF record, multiple records, `+all` / `?all` / no `all`, `redirect` ignored next to
   `all`, terms after `all`, `ptr`, very broad `ip4`/`ip6` ranges, and a real `check_host()` evaluation (with macro
   expansion) for the sending IPs you pass with `--ip`.
+- **SPF flattening** (`flatten-spf`): proposes records that replace includes, `a` and `mx` with merged `ip4`/`ip6`
+  ranges (split into chained includes when too long), and checks them with `check_host()` against the current policy
+  before printing them.
 - **DKIM (RFC 6376, 8301, 8463)**: selector discovery from about 50 selectors used by common providers plus your own
   (`--selector`), wildcard detection, key type, RSA key length read from the DER public key, revoked keys, `t=y`
   testing mode, `h=sha1`, `s=` service type, multiple records per selector.
@@ -227,6 +231,57 @@ Based on Google's [Email sender guidelines](https://support.google.com/a/answer/
 Gmail counts a bulk sender as one that sends more than 5,000 messages a day to personal Gmail accounts. If you are
 not one, `--not-bulk` turns the bulk-only failures into warnings.
 
+## Flattening an SPF record
+
+When a policy needs more than 10 DNS lookups, `flatten-spf` proposes records that replace includes and `a`/`mx`
+terms with the address ranges they resolve to. Nothing is published; the records are printed for you to review.
+
+```bash
+# Proposed records, what was flattened or kept, and the old/new comparison
+mail-auth-check flatten-spf example.com
+
+# Keep the includes of providers that change their addresses often, write zone-file lines
+mail-auth-check flatten-spf example.com --keep _spf.google.com,spf.protection.outlook.com --format zone --ttl 300
+
+# Offline, against fake DNS data
+mail-auth-check flatten-spf example.com --dns-data examples/dns-example.json --format json
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--keep DOMAIN` | leave `include:DOMAIN` / `redirect=DOMAIN` unchanged (repeatable, comma-separated) |
+| `--max-length N` | longest record before the ranges move to `<label>1.<domain>`, `<label>2.<domain>`, ... (default 450) |
+| `--label PREFIX` | name prefix of the chained records (default `_spf`) |
+| `--ip IP` | add an address to the old/new comparison (repeatable) |
+| `--no-verify` | skip the comparison |
+| `--format` | `text`, `json` or `zone`; `--ttl` sets the TTL of zone-file lines (default 3600) |
+| `--dns-data`, `--nameserver`, `--timeout`, `--output` | as for the audit |
+
+How it works:
+
+- `ip4`/`ip6` ranges are collected from the whole tree, host bits are cleared, and overlapping or adjacent ranges are
+  merged. `a` and `mx` terms are resolved with their prefix lengths (`a/24//64`).
+- Inside an include only the `+` mechanisms authorize anything, so `-ip4:` and similar terms there are left out. At
+  the top level non-pass terms are kept in place; if one comes after a flattened term you get a warning, because the
+  ranges are written before it.
+- Terms that depend on the message (macros, `exists`, `ptr`) cannot become ranges. At the top level they are kept; an
+  include that contains one (or ends in `+all`) is kept as a whole. `exp=` is kept, unknown modifiers are dropped.
+- The chained records end in `-all`, which inside an include only means "no match here".
+- The proposal is checked against the real DNS data with the new records laid over it: the lookup count must be 10 or
+  less, and `check_host()` must give the same result for each sample address as the current policy. Samples where the
+  current policy already returns permerror (usually because it is over the limit) are not compared.
+
+| Exit code | Meaning |
+| ---: | --- |
+| 0 | records proposed (or nothing to flatten) |
+| 1 | the proposal still needs more than 10 lookups, or gives a different result for a sample address |
+| 2 | usage error |
+| 3 | DNS lookups failed |
+
+Flattened ranges are a snapshot. When a provider adds sending addresses, mail from them fails SPF until you rebuild
+the record, so run `flatten-spf` from a scheduled job and compare its `--format zone` output, or `--keep` the
+includes you do not control.
+
 ## Score and exit codes
 
 Points per check: DMARC 30, SPF 25, DKIM 25, MX 6, MTA-STS 6, TLS-RPT 4, BIMI 4. A check without problems gets full
@@ -276,7 +331,15 @@ a convenient way to try a DNS change before publishing it.
 ## Library use
 
 ```python
-from mail_auth_check import DnspythonResolver, audit_domain, check_host, analyze_spf, render, urllib_fetcher
+from mail_auth_check import (
+    DnspythonResolver,
+    analyze_spf,
+    audit_domain,
+    check_host,
+    flatten_spf,
+    render,
+    urllib_fetcher,
+)
 
 resolver = DnspythonResolver(timeout=5)
 report = audit_domain("example.com", resolver, fetcher=urllib_fetcher, selectors=["selector1"])
@@ -288,6 +351,8 @@ for check in report.checks:
 
 spf = analyze_spf(resolver, "example.com")
 print(spf.total_lookups, spf.total_void, spf.ip4)
+flat = flatten_spf(resolver, "example.com", keep=["_spf.google.com"])
+print(flat.status, flat.lookups, flat.records, flat.mismatches)
 print(check_host(resolver, "192.0.2.25", "example.com", sender="news@example.com").result)
 print(render("markdown", [report]))
 ```

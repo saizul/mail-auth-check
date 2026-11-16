@@ -8,8 +8,8 @@ from .model import CheckResult, DomainReport, Finding
 from .mta_sts import parse_policy, parse_sts_record
 from .report import render
 from .resolver import DnsAnswer, DnspythonResolver, Resolver, StaticResolver
+from .spf import FlattenResult, check_host, flatten_spf, parse_record
 from .spf import analyze as analyze_spf
-from .spf import check_host, parse_record
 from .util import FetchResult, organizational_domain, urllib_fetcher
 
 __all__ = [
@@ -20,6 +20,7 @@ __all__ = [
     "DnspythonResolver",
     "DomainReport",
     "FetchResult",
+    "FlattenResult",
     "Finding",
     "Resolver",
     "StaticResolver",
@@ -27,6 +28,7 @@ __all__ = [
     "analyze_spf",
     "audit_domain",
     "check_host",
+    "flatten_spf",
     "grade_for",
     "organizational_domain",
     "parse_dkim_record",

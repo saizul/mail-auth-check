@@ -63,6 +63,8 @@ jobs:
           code=$?
           set -e
           test "$code" -eq 1
+          mail-auth-check flatten-spf example.com --dns-data examples/dns-example.json
+          mail-auth-check flatten-spf broken.example --dns-data examples/dns-example.json --format zone
           python examples/library_usage.py
 
   docker:
