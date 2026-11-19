@@ -18,6 +18,7 @@ RFC = {
     "dkim-ed25519": "https://www.rfc-editor.org/rfc/rfc8463",
     "dkim-rsa": "https://www.rfc-editor.org/rfc/rfc8301",
     "dmarc": "https://www.rfc-editor.org/rfc/rfc7489",
+    "dmarcbis": "https://datatracker.ietf.org/doc/draft-ietf-dmarc-dmarcbis/",
     "mta-sts": "https://www.rfc-editor.org/rfc/rfc8461",
     "tlsrpt": "https://www.rfc-editor.org/rfc/rfc8460",
     "null-mx": "https://www.rfc-editor.org/rfc/rfc7505",

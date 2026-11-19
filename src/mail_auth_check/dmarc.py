@@ -72,6 +72,9 @@ class DmarcRecord:
     aspf: str = "r"
     fo: list[str] = field(default_factory=lambda: ["0"])
     ri: int = 86400
+    nonexistent_policy: str | None = None
+    psd: str = "u"
+    testing: bool = False
     rua: list[ReportUri] = field(default_factory=list)
     ruf: list[ReportUri] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
@@ -81,6 +84,11 @@ class DmarcRecord:
     @property
     def effective_subdomain_policy(self) -> str | None:
         return self.subdomain_policy or self.policy
+
+    @property
+    def effective_nonexistent_policy(self) -> str | None:
+        """DMARCbis np=: the policy for subdomains that do not exist, falling back to sp= and then p=."""
+        return self.nonexistent_policy or self.effective_subdomain_policy
 
     @property
     def enforcing(self) -> bool:
@@ -116,6 +124,24 @@ def parse_dmarc(text: str) -> DmarcRecord:
             rec.errors.append(f"sp={sp} is not none, quarantine or reject")
         else:
             rec.subdomain_policy = sp.lower()
+    np = tags.get("np")
+    if np is not None:
+        if np.lower() not in POLICIES:
+            rec.errors.append(f"np={np} is not none, quarantine or reject")
+        else:
+            rec.nonexistent_policy = np.lower()
+    psd = tags.get("psd")
+    if psd is not None:
+        if psd.lower() not in ("y", "n", "u"):
+            rec.errors.append(f"psd={psd} must be y, n or u")
+        else:
+            rec.psd = psd.lower()
+    t = tags.get("t")
+    if t is not None:
+        if t.lower() not in ("y", "n"):
+            rec.errors.append(f"t={t} must be y or n")
+        else:
+            rec.testing = t.lower() == "y"
     pct = tags.get("pct")
     if pct is not None:
         if not pct.isdigit() or not 0 <= int(pct) <= 100:
