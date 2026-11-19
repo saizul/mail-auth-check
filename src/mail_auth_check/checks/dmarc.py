@@ -11,6 +11,7 @@ __all__ = ["check_dmarc", "lookup_dmarc"]
 
 MAX_SCORE = 30.0
 REF = RFC["dmarc"]
+BIS = RFC["dmarcbis"]
 
 
 def lookup_dmarc(ctx: CheckContext, res: CheckResult) -> tuple[str | None, DmarcRecord | None]:
@@ -63,6 +64,9 @@ def check_dmarc(ctx: CheckContext) -> CheckResult:
         "policy": rec.policy,
         "subdomainPolicy": rec.effective_subdomain_policy,
         "pct": rec.pct,
+        "nonexistentPolicy": rec.effective_nonexistent_policy,
+        "psd": rec.psd,
+        "testing": rec.testing,
         "adkim": rec.adkim,
         "aspf": rec.aspf,
         "rua": [u.raw for u in rec.rua],
@@ -112,6 +116,32 @@ def check_dmarc(ctx: CheckContext) -> CheckResult:
             "Remove sp= or set it to quarantine/reject.",
         )
         score -= 0.1
+    if not inherited and rec.enforcing and rec.nonexistent_policy == "none":
+        res.warn(
+            "dmarc.np_none",
+            "np=none leaves subdomains that do not exist (a favourite of spoofers) unprotected while the domain "
+            "itself enforces.",
+            "Remove np= or set it to quarantine/reject.",
+            BIS,
+        )
+        score -= 0.1
+    if rec.testing and rec.enforcing:
+        lower = "quarantine" if rec.policy == "reject" else "none"
+        res.warn(
+            "dmarc.testing",
+            f"t=y (testing mode): receivers that follow DMARCbis apply {lower} instead of p={rec.policy}.",
+            "Remove t=y (or set t=n) once reports show all legitimate mail passes.",
+            BIS,
+        )
+        score -= 0.1
+    if rec.psd == "y":
+        res.warn(
+            "dmarc.psd",
+            f"psd=y declares {found_at} a public suffix domain (such as a TLD or a registry suffix).",
+            "Only public suffix operators should publish psd=y; on an ordinary domain it changes how receivers "
+            "find the organizational domain. Remove it or use psd=n.",
+            BIS,
+        )
     if rec.adkim == "s" or rec.aspf == "s":
         res.info("dmarc.strict", f"Strict alignment (adkim={rec.adkim}, aspf={rec.aspf}): subdomain senders fail.")
     if not rec.rua:

@@ -207,6 +207,12 @@ an enforcing policy are warnings, a missing `rua=` is a warning. For report addr
 domain, the authorization record `<your domain>._report._dmarc.<report host>` must exist and start with `v=DMARC1`,
 otherwise receivers drop those reports: that is an error.
 
+The DMARCbis tags are validated too: `np=` (policy for subdomains that do not exist) must be none, quarantine or
+reject, `psd=` must be y, n or u, and `t=` must be y or n. `np=none` next to an enforcing policy is a warning
+(`dmarc.np_none`), `t=y` is a warning because receivers apply the policy one level lower (`dmarc.testing`: reject
+becomes quarantine, quarantine becomes none), and `psd=y` on an ordinary domain is a warning (`dmarc.psd`). The JSON
+output includes `nonexistentPolicy`, `psd` and `testing`.
+
 ### MTA-STS, TLS-RPT, BIMI and MX
 
 See [Features](#features). A domain with a null MX skips MTA-STS and TLS-RPT. BIMI is optional, so a missing record is
@@ -404,12 +410,13 @@ build.
   needs an SMTP STARTTLS connection).
 - BIMI: the mark certificate (VMC/CMC) in `a=` is not downloaded or validated. The 32 KB logo size warning is a
   common recommendation, not a protocol limit.
-- DMARCbis tags (`np`, `psd`, `t`) are recognised but not validated.
+- DMARCbis `psd=` is validated, but the DMARCbis tree walk for the organizational domain is not implemented; the
+  built-in suffix list is used instead.
 - Spam rate, TLS for outgoing mail and message formatting cannot be seen in DNS; they are listed as manual checks.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md). Security issues: see [SECURITY.md](SECURITY.md).
 
 ## License
 

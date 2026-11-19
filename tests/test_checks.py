@@ -157,6 +157,25 @@ def test_dmarc_policies_and_scores():
     assert "dmarc.syntax" in codes(bad) and bad.score <= 6
 
 
+def test_dmarcbis_np_testing_and_psd():
+    good = dmarc("v=DMARC1; p=reject; np=reject; t=n; psd=n; rua=mailto:d@example.com")
+    assert not {"dmarc.np_none", "dmarc.testing", "dmarc.psd"} & codes(good)
+    assert good.score == 30
+    assert good.data["nonexistentPolicy"] == "reject" and good.data["testing"] is False
+    np_none = dmarc("v=DMARC1; p=reject; np=none; rua=mailto:d@example.com")
+    assert "dmarc.np_none" in codes(np_none) and np_none.score < 30
+    assert "dmarc.np_none" not in codes(dmarc("v=DMARC1; p=none; np=none; rua=mailto:d@example.com"))
+    testing = dmarc("v=DMARC1; p=reject; t=y; rua=mailto:d@example.com")
+    finding = next(f for f in testing.findings if f.code == "dmarc.testing")
+    assert "apply quarantine" in finding.message and testing.score < 30
+    quarantine_testing = dmarc("v=DMARC1; p=quarantine; t=y; rua=mailto:d@example.com")
+    assert "apply none" in next(f for f in quarantine_testing.findings if f.code == "dmarc.testing").message
+    psd = dmarc("v=DMARC1; p=reject; psd=y; rua=mailto:d@example.com")
+    assert "dmarc.psd" in codes(psd) and psd.data["psd"] == "y"
+    bad = dmarc("v=DMARC1; p=reject; np=maybe; rua=mailto:d@example.com")
+    assert "dmarc.syntax" in codes(bad) and bad.score <= 6
+
+
 def test_dmarc_inherited_from_org_domain():
     res = check_dmarc(
         make_ctx(

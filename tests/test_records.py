@@ -215,3 +215,26 @@ def test_policy_mode_none_needs_no_mx_and_duplicate_keys_warn():
 )
 def test_mx_matches(host, pattern, ok):
     assert mx_matches(host, pattern) is ok
+
+
+def test_parse_dmarcbis_tags():
+    rec = parse_dmarc("v=DMARC1; p=reject; sp=quarantine; np=reject; psd=n; t=y")
+    assert rec.errors == []
+    assert rec.nonexistent_policy == "reject" and rec.psd == "n" and rec.testing is True
+    plain = parse_dmarc("v=DMARC1; p=reject; sp=quarantine")
+    assert plain.nonexistent_policy is None and plain.psd == "u" and plain.testing is False
+    assert plain.effective_nonexistent_policy == "quarantine"
+    assert parse_dmarc("v=DMARC1; p=none").effective_nonexistent_policy == "none"
+
+
+@pytest.mark.parametrize(
+    ("text", "fragment"),
+    [
+        ("v=DMARC1; p=reject; np=block", "np=block"),
+        ("v=DMARC1; p=reject; psd=yes", "psd=yes must be y, n or u"),
+        ("v=DMARC1; p=reject; t=1", "t=1 must be y or n"),
+    ],
+)
+def test_parse_dmarcbis_tag_errors(text, fragment):
+    rec = parse_dmarc(text)
+    assert any(fragment in e for e in rec.errors), rec.errors

@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- DMARCbis tags are validated: `np=` (none/quarantine/reject), `psd=` (y/n/u) and `t=` (y/n). New findings
+  `dmarc.np_none` (non-existent subdomains left open next to an enforcing policy), `dmarc.testing` (`t=y` makes
+  receivers apply the policy one level lower) and `dmarc.psd` (`psd=y` on an ordinary domain). The DMARC data in
+  JSON output gains `nonexistentPolicy`, `psd` and `testing`; `DmarcRecord` gains `nonexistent_policy`, `psd`,
+  `testing` and `effective_nonexistent_policy`.
+- A code of conduct, issue forms and a pull request template.
 - `mail-auth-check flatten-spf <domain>`: builds an SPF record that replaces `include`, `a`, `mx` and `redirect`
   terms with the `ip4:`/`ip6:` ranges they resolve to (merged and collapsed), to get a policy back under the
   10-lookup limit. Long results are split into chained `include:_spfN.<domain>` records under `--max-length`
